@@ -19,3 +19,6 @@ __pycache__/
 
 # 其它不必要提交的
 *.swp
+
+# 忽略 Django 子项目里的虚拟环境
+django/venv/
