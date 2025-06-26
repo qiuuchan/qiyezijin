@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业资金收入预测系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36BFFA',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        danger: '#F53F3F',
+                        neutral: {
+                            100: '#F2F3F5',
+                            200: '#E5E6EB',
+                            300: '#C9CDD4',
+                            400: '#86909C',
+                            500: '#4E5969',
+                            600: '#272E3B',
+                            700: '#1D2129',
+                        }
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 4px 20px rgba(0, 0, 0, 0.08)',
+                        'card-hover': '0 10px 30px rgba(0, 0, 0, 0.12)',
+                    }
+                },
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .bg-gradient-primary {
+                background: linear-gradient(135deg, #165DFF 0%, #36BFFA 100%);
+            }
+            .transition-custom {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-neutral-100 text-neutral-700">
+    <!-- 导航栏 -->
+    <header id="navbar" class="fixed w-full top-0 z-50 transition-all duration-300 bg-white/95 shadow-md">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="#" class="flex items-center space-x-2">
+                <div class="bg-primary text-white p-2 rounded-lg">
+                    <i class="fa fa-line-chart text-xl"></i>
+                </div>
+                <span class="text-xl font-bold text-neutral-700">资金预测系统</span>
+            </a>
+            
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#" class="text-primary font-medium hover:text-primary/80 transition-custom">首页</a>
+                <a href="/weekly/" class="text-neutral-500 font-medium hover:text-primary transition-custom">周度预测</a>
+                <a href="/monthly/" class="text-neutral-500 font-medium hover:text-primary transition-custom">月度预测</a>
+                <a href="#" class="text-neutral-500 font-medium hover:text-primary transition-custom">关于系统</a>
+            </nav>
+            
+            <div class="flex items-center space-x-4">
+                <button class="hidden md:block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-custom shadow-md hover:shadow-lg">
+                    <i class="fa fa-refresh mr-1"></i> 更新数据
+                </button>
+                <button id="menu-toggle" class="md:hidden text-neutral-700 focus:outline-none">
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white border-t border-neutral-200">
+            <div class="container mx-auto px-4 py-3 flex flex-col space-y-3">
+                <a href="#" class="text-primary font-medium py-2 hover:bg-neutral-100 px-3 rounded-lg">首页</a>
+                <a href="/weekly/" class="text-neutral-500 font-medium py-2 hover:bg-neutral-100 px-3 rounded-lg">周度预测</a>
+                <a href="/monthly/" class="text-neutral-500 font-medium py-2 hover:bg-neutral-100 px-3 rounded-lg">月度预测</a>
+                <a href="#" class="text-neutral-500 font-medium py-2 hover:bg-neutral-100 px-3 rounded-lg">关于系统</a>
+                <button class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-custom shadow-md hover:shadow-lg">
+                    <i class="fa fa-refresh mr-1"></i> 更新数据
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容 -->
+    <main class="container mx-auto px-4 pt-24 pb-16">
+        <!-- 英雄区域 -->
+        <section class="mb-16">
+            <div class="bg-gradient-primary rounded-2xl shadow-lg overflow-hidden">
+                <div class="flex flex-col md:flex-row items-center">
+                    <div class="p-8 md:p-12 md:w-1/2">
+                        <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold text-white leading-tight text-shadow mb-4">
+                            智能资金收入预测<br>助力企业财务决策
+                        </h1>
+                        <p class="text-white/90 text-lg mb-8">
+                            基于XGBoost机器学习算法，提供精准的周度和月度资金收入预测，帮助企业提前规划，优化资金配置。
+                        </p>
+                        <div class="flex flex-wrap gap-4">
+                            <a href="/weekly/" class="px-6 py-3 bg-white text-primary font-semibold rounded-lg shadow-lg hover:shadow-xl transition-custom transform hover:-translate-y-1">
+                                <i class="fa fa-calendar-o mr-2"></i>周度预测
+                            </a>
+                            <a href="/monthly/" class="px-6 py-3 bg-white/20 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-custom transform hover:-translate-y-1">
+                                <i class="fa fa-calendar mr-2"></i>月度预测
+                            </a>
+                        </div>
+                    </div>
+                    <div class="md:w-1/2 p-8 md:p-12 flex justify-center">
+                        <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg w-full max-w-md">
+                            <h3 class="text-white text-xl font-semibold mb-4">预测精度概览</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-white/5 rounded-lg p-4">
+                                    <p class="text-white/80 text-sm mb-1">周度预测误差</p>
+                                    <p class="text-white text-2xl font-bold">4.23%</p>
+                                    <div class="w-full bg-white/20 h-2 rounded-full mt-2">
+                                        <div class="bg-success h-2 rounded-full" style="width: 4.23%"></div>
+                                    </div>
+                                </div>
+                                <div class="bg-white/5 rounded-lg p-4">
+                                    <p class="text-white/80 text-sm mb-1">月度预测误差</p>
+                                    <p class="text-white text-2xl font-bold">0.72%</p>
+                                    <div class="w-full bg-white/20 h-2 rounded-full mt-2">
+                                        <div class="bg-success h-2 rounded-full" style="width: 0.72%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <canvas id="accuracyChart" height="150"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 系统特点 -->
+        <section class="mb-16">
+            <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-neutral-700 mb-8 text-center">系统核心功能</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-xl shadow-card p-6 hover:shadow-card-hover transition-custom transform hover:-translate-y-2">
+                    <div class="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa fa-bar-chart text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-neutral-700">精准预测模型</h3>
+                    <p class="text-neutral-500">基于XGBoost算法，结合历史数据与时间特征，提供高精度的资金收入预测，误差率远低于行业标准。</p>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-card p-6 hover:shadow-card-hover transition-custom transform hover:-translate-y-2">
+                    <div class="w-14 h-14 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa fa-line-chart text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-neutral-700">多周期预测</h3>
+                    <p class="text-neutral-500">支持周度和月度两种预测周期，满足不同场景的财务规划需求，帮助企业制定短期和中长期策略。</p>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-card p-6 hover:shadow-card-hover transition-custom transform hover:-translate-y-2">
+                    <div class="w-14 h-14 bg-success/10 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa fa-area-chart text-success text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-neutral-700">数据可视化</h3>
+                    <p class="text-neutral-500">直观的图表展示预测结果与历史数据对比，支持导出报表，帮助决策者快速理解趋势并做出科学判断。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 最近预测结果 -->
+        <section class="mb-16">
+            <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-neutral-700 mb-8">最近预测结果</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow-card overflow-hidden">
+                    <div class="p-6 border-b border-neutral-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-neutral-700">周度预测趋势</h3>
+                            <span class="text-xs px-2 py-1 bg-success/10 text-success rounded-full">
+                                <i class="fa fa-check-circle mr-1"></i>已完成
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <canvas id="weeklyTrendChart" height="250"></canvas>
+                    </div>
+                    <div class="p-6 border-t border-neutral-200">
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <p class="text-sm text-neutral-500">平均误差</p>
+                                <p class="text-lg font-bold text-neutral-700">4.23%</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-neutral-500">预测周期</p>
+                                <p class="text-lg font-bold text-neutral-700">12周</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-neutral-500">更新时间</p>
+                                <p class="text-lg font-bold text-neutral-700">2025-06-22</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-card overflow-hidden">
+                    <div class="p-6 border-b border-neutral-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-neutral-700">月度预测趋势</h3>
+                            <span class="text-xs px-2 py-1 bg-success/10 text-success rounded-full">
+                                <i class="fa fa-check-circle mr-1"></i>已完成
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <canvas id="monthlyTrendChart" height="250"></canvas>
+                    </div>
+                    <div class="p-6 border-t border-neutral-200">
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <p class="text-sm text-neutral-500">平均误差</p>
+                                <p class="text-lg font-bold text-neutral-700">0.72%</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-neutral-500">预测周期</p>
+                                <p class="text-lg font-bold text-neutral-700">6个月</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-neutral-500">更新时间</p>
+                                <p class="text-lg font-bold text-neutral-700">2025-06-22</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 预测流程 -->
+        <section>
+            <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-neutral-700 mb-8 text-center">预测流程</h2>
+            <div class="relative">
+                <!-- 连接线 -->
+                <div class="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-primary/20 transform -translate-x-1/2"></div>
+                
+                <div class="space-y-8">
+                    <!-- 步骤1 -->
+                    <div class="flex flex-col md:flex-row items-center">
+                        <div class="md:w-1/2 md:pr-12 md:text-right order-2 md:order-1 mt-4 md:mt-0">
+                            <h3 class="text-xl font-semibold text-neutral-700 mb-2">数据收集与清洗</h3>
+                            <p class="text-neutral-500">收集历史资金收入数据，进行缺失值处理、异常值过滤和标准化。</p>
+                        </div>
+                        <div class="md:w-12 flex justify-center order-1 md:order-2 relative">
+                            <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg z-10">
+                                <span class="font-bold">1</span>
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 md:pl-12 order-3 hidden md:block"></div>
+                    </div>
+                    
+                    <!-- 步骤2 -->
+                    <div class="flex flex-col md:flex-row items-center">
+                        <div class="md:w-1/2 md:pr-12 order-1 md:order-1 hidden md:block"></div>
+                        <div class="md:w-12 flex justify-center order-2 md:order-2 relative">
+                            <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg z-10">
+                                <span class="font-bold">2</span>
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 md:pl-12 order-3 md:order-3 mt-4 md:mt-0">
+                            <h3 class="text-xl font-semibold text-neutral-700 mb-2">特征工程与模型训练</h3>
+                            <p class="text-neutral-500">构建时间特征和统计特征，使用XGBoost算法训练预测模型。</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 步骤3 -->
+                    <div class="flex flex-col md:flex-row items-center">
+                        <div class="md:w-1/2 md:pr-12 md:text-right order-2 md:order-1 mt-4 md:mt-0">
+                            <h3 class="text-xl font-semibold text-neutral-700 mb-2">模型评估与优化</h3>
+                            <p class="text-neutral-500">使用交叉验证评估模型性能，优化参数提高预测精度。</p>
+                        </div>
+                        <div class="md:w-12 flex justify-center order-1 md:order-2 relative">
+                            <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg z-10">
+                                <span class="font-bold">3</span>
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 md:pl-12 order-3 hidden md:block"></div>
+                    </div>
+                    
+                    <!-- 步骤4 -->
+                    <div class="flex flex-col md:flex-row items-center">
+                        <div class="md:w-1/2 md:pr-12 order-1 md:order-1 hidden md:block"></div>
+                        <div class="md:w-12 flex justify-center order-2 md:order-2 relative">
+                            <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg z-10">
+                                <span class="font-bold">4</span>
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 md:pl-12 order-3 md:order-3 mt-4 md:mt-0">
+                            <h3 class="text-xl font-semibold text-neutral-700 mb-2">预测与可视化</h3>
+                            <p class="text-neutral-500">生成预测结果，通过直观图表展示并提供下载功能。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-neutral-700 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">资金预测系统</h3>
+                    <p class="text-neutral-300 mb-4">企业资金收入预测解决方案，助力财务决策智能化。</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-neutral-300 hover:text-white transition-custom">
+                            <i class="fa fa-github text-xl"></i>
+                        </a>
+                        <a href="#" class="text-neutral-300 hover:text-white transition-custom">
+                            <i class="fa fa-linkedin text-xl"></i>
+                        </a>
+                        <a href="#" class="text-neutral-300 hover:text-white transition-custom">
+                            <i class="fa fa-twitter text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">快速链接</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-neutral-300 hover:text-white transition-custom">首页</a></li>
+                        <li><a href="/weekly/" class="text-neutral-300 hover:text-white transition-custom">周度预测</a></li>
+                        <li><a href="/monthly/" class="text-neutral-300 hover:text-white transition-custom">月度预测</a></li>
+                        <li><a href="#" class="text-neutral-300 hover:text-white transition-custom">使用文档</a></li>
+                        <li><a href="#" class="text-neutral-300 hover:text-white transition-custom">关于我们</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">联系我们</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center">
+                            <i class="fa fa-envelope-o mr-2"></i>
+                            <span class="text-neutral-300">contact@forecast-system.com</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fa fa-phone mr-2"></i>
+                            <span class="text-neutral-300">+86 13525169428</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fa fa-map-marker mr-2"></i>
+                            <span class="text-neutral-300">北京理工大学珠海学院</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-neutral-600 mt-8 pt-8 text-center text-neutral-400">
+                <p>&copy; 2025 资金预测系统. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // 导航栏滚动效果
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('py-2', 'shadow-md');
+                navbar.classList.remove('py-3');
+            } else {
+                navbar.classList.add('py-3');
+                navbar.classList.remove('py-2', 'shadow-md');
+            }
+        });
+        
+        // 移动端菜单切换
+        document.getElementById('menu-toggle').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // 精度图表
+        const accuracyCtx = document.getElementById('accuracyChart').getContext('2d');
+        new Chart(accuracyCtx, {
+            type: 'line',
+            data: {
+                labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                datasets: [{
+                    label: '周度预测误差率',
+                    data: [8.5, 7.2, 6.1, 5.3, 4.8, 4.23],
+                    borderColor: '#00B42A',
+                    backgroundColor: 'rgba(0, 180, 42, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }, {
+                    label: '月度预测误差率',
+                    data: [3.2, 2.5, 1.8, 1.0, 0.9, 0.72],
+                    borderColor: '#165DFF',
+                    backgroundColor: 'rgba(22, 93, 255, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.8)'
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.8)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.8)'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 周度趋势图表
+        const weeklyCtx = document.getElementById('weeklyTrendChart').getContext('2d');
+        new Chart(weeklyCtx, {
+            type: 'bar',
+            data: {
+                labels: ['第1周', '第2周', '第3周', '第4周', '第5周', '第6周', '第7周', '第8周', '第9周', '第10周', '第11周', '第12周'],
+                datasets: [{
+                    label: '预测收入',
+                    data: [125000, 132000, 128000, 145000, 138000, 152000, 149000, 165000, 172000, 168000, 185000, 192000],
+                    backgroundColor: 'rgba(22, 93, 255, 0.7)',
+                    borderColor: '#165DFF',
+                    borderWidth: 1
+                }, {
+                    label: '实际收入',
+                    data: [128000, 130000, 127000, 142000, 140000, 150000, 151000, 162000, 170000, 171000, 182000, null],
+                    backgroundColor: 'rgba(0, 180, 42, 0.7)',
+                    borderColor: '#00B42A',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY' }).format(context.parsed.y);
+                                } else {
+                                    label += '未更新';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '¥' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 月度趋势图表
+        const monthlyCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+        new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                datasets: [{
+                    label: '预测收入',
+                    data: [520000, 580000, 620000, 680000, 750000, 820000, 900000, 980000, 1050000, 1120000, 1200000, 1280000],
+                    borderColor: '#165DFF',
+                    backgroundColor: 'rgba(22, 93, 255, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }, {
+                    label: '实际收入',
+                    data: [510000, 575000, 610000, 672000, 745000, 812000, null, null, null, null, null, null],
+                    borderColor: '#00B42A',
+                    backgroundColor: 'rgba(0, 180, 42, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY' }).format(context.parsed.y);
+                                } else {
+                                    label += '未更新';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '¥' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>    

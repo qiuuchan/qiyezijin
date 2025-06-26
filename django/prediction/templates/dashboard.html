@@ -1,0 +1,100 @@
+<!-- prediction/templates/dashboard.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>资金收入预测系统</title>
+    <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/echarts"></script>
+    <style>
+        body { font-family: "Microsoft YaHei", sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .card { margin-bottom: 20px; padding: 15px; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 5px; }
+        .chart-container { height: 400px; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">企业资金收入预测仪表盘</h1>
+    
+    <div class="card">
+        <h3>周度预测结果</h3>
+        <div id="weeklyChart" class="chart-container"></div>
+    </div>
+    
+    <div class="card">
+        <h3>月度预测结果</h3>
+        <div id="monthlyChart" class="chart-container"></div>
+    </div>
+
+    <script>
+        // 周度预测图表
+        fetch('/api/weekly/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    const weeklyChart = echarts.init(document.getElementById('weeklyChart'));
+                    weeklyChart.setOption({
+                        title: { text: '周度收入预测趋势' },
+                        tooltip: { trigger: 'axis' },
+                        xAxis: {
+                            type: 'category',
+                            data: ['历史周1', '历史周2', '历史周3', '预测周']
+                        },
+                        yAxis: { type: 'value', name: '收入金额（元）' },
+                        series: [
+                            {
+                                name: '历史收入',
+                                data: [385000, 392000, 378000],
+                                type: 'line',
+                                symbol: 'circle',
+                                color: '#3498db'
+                            },
+                            {
+                                name: '预测收入',
+                                data: [null, null, null, data.data.predicted_income],
+                                type: 'line',
+                                symbol: 'cross',
+                                color: '#e74c3c',
+                                linestyle: { type: 'dashed' }
+                            }
+                        ]
+                    });
+                } else {
+                    document.getElementById('weeklyChart').innerHTML = `<div style="color: red;">${data.message}</div>`;
+                }
+            });
+
+        // 月度预测图表
+        fetch('/api/monthly/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    const monthlyChart = echarts.init(document.getElementById('monthlyChart'));
+                    monthlyChart.setOption({
+                        title: { text: '月度收入预测对比' },
+                        tooltip: { trigger: 'axis' },
+                        xAxis: {
+                            type: 'category',
+                            data: ['历史月1', '历史月2', '历史月3', '预测月']
+                        },
+                        yAxis: { type: 'value', name: '收入金额（万元）' },
+                        series: [
+                            {
+                                name: '历史收入',
+                                data: [120, 125, 123],
+                                type: 'bar',
+                                itemStyle: { color: '#2ecc71' }
+                            },
+                            {
+                                name: '预测收入',
+                                data: [null, null, null, data.data.predicted_income / 10000],
+                                type: 'bar',
+                                itemStyle: { color: '#f39c12' }
+                            }
+                        ]
+                    });
+                } else {
+                    document.getElementById('monthlyChart').innerHTML = `<div style="color: red;">${data.message}</div>`;
+                }
+            });
+    </script>
+</body>
+</html>

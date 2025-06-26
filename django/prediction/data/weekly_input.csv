@@ -1,0 +1,2 @@
+lag_1,lag_2,lag_3,lag_4,lag_5,lag_6,week_of_year,rolling_mean_3,rolling_mean_6,is_holiday_week,income_growth_rate,quarter,week_sin,week_cos
+392000,385000,395000,401000,398000,387000,26,390666.67,420000,0,0.018,3,0.96,0.28

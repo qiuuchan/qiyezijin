@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>月度资金收入预测 - 企业资金预测系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36BFFA',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        danger: '#F53F3F',
+                        neutral: {
+                            100: '#F2F3F5',
+                            200: '#E5E6EB',
+                            300: '#C9CDD4',
+                            400: '#86909C',
+                            500: '#4E5969',
+                            600: '#272E3B',
+                            700: '#1D2129',
+                        }
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 4px 20px rgba(0, 0, 0, 0.08)',
+                        'card-hover': '0 10px 30px rgba(0, 0, 0, 0.12)',
+                    }
+                },
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .bg-gradient-primary {
+                background: linear-gradient(135deg, #165DFF 0%, #36BFFA 100%);
+            }
+            .transition-custom {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .animate-fadeIn {
+                animation: fadeIn 0.5s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-neutral-100 text-neutral-700">
+    <!-- 导航栏 -->
+    <header id="navbar" class="fixed w-full top-0 z-50 transition-all duration-300 bg-white/95 shadow-md">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="#" class="flex items-center space-x-2">
+                <div class="bg-primary text-white p-2 rounded-lg">
+                    <i class="fa fa-line-chart text-xl"></i>
+                </div>
+                <span class="text-xl font-bold text-neutral-700">资金预测系统</span>
+            </a>
+            
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="/" class="text-neutral-500 font-medium hover:text-primary transition-custom">首页</a>
+                <a href="/weekly/" class="text-neutral-500 font-medium hover:text-primary transition-custom">周度预测</a>
+                <a href="/monthly/" class="text-primary font-medium hover:text-primary/80 transition-custom">月度预测</a>
+                <a href="#" class="text-neutral-500 font-medium hover:text-primary transition-custom">关于系统</a>
+            </nav>
+            
+            <div class="flex items-center space-x-4">
+                <button class="hidden md:block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-custom shadow-md hover:shadow-lg">
+                    <i class="fa fa-refresh mr-1"></i> 更新预测
+                </button>
+                <button id="menu-toggle" class="md:hidden text-neutral-700 focus:outline-none">
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white border-t border-neutral-200">
+            <div class="container mx-auto px-4 py-3 flex flex-col space-y-3">
+                <a href="/" class="text-neutral-500 font-medium py-2 hover:bg-neutral-100 px-3 rounded-lg">首页</a>
+                <a href="/weekly/" class="text-neutral-500 font-medium py-2 hover:bg-neutral-100 px-3 rounded-lg">周度预测</a>
+                <a href="/monthly/" class="text-primary font-medium py-2 hover:bg-neutral-100 px-3 rounded-lg">月度预测</a>
+                <a href="#" class="text-neutral-500 font-medium py-2 hover:bg-neutral-100 px-3 rounded-lg">关于系统</a>
+                <button class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-custom shadow-md hover:shadow-lg">
+                    <i class="fa fa-refresh mr-1"></i> 更新预测
+                </button>
+            </div>
+        </div>
+    </header>
+    <!-- 主内容 -->
+    <main class="container mx-auto px-4 pt-24 pb-16">
+        <!-- 页面标题 -->
+        <section class="mb-10 animate-fadeIn">
+            <div class="flex flex-col md:flex-row md:items-center justify-between">
+                <div>
+                    <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-neutral-700 mb-2">月度资金收入预测</h1>
+                    <p class="text-neutral-500 max-w-2xl" id="pageDesc">基于历史12个月收入数据，使用XGBoost模型预测未来6个月月度收入，平均预测误差仅0.72%，为企业中长期财务规划提供数据支撑。</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex space-x-3">
+                    <button class="px-4 py-2 bg-white border border-neutral-300 rounded-lg hover:border-primary hover:text-primary transition-custom">
+                        <i class="fa fa-download mr-1"></i> 导出报表
+                    </button>
+                    <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-custom shadow-md hover:shadow-lg">
+                        <i class="fa fa-calendar mr-1"></i> 自定义预测周期
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 预测概览卡片 -->
+        <section class="mb-12 animate-fadeIn" style="animation-delay: 0.1s">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl shadow-card p-6 hover:shadow-card-hover transition-custom transform hover:-translate-y-2">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-sm text-neutral-500 mb-1" id="nextMonthLabel">下月预测收入</p>
+                            <h3 class="text-3xl font-bold text-neutral-700" id="nextMonthIncome">¥1,280,000</h3>
+                            <p class="text-success text-sm font-medium mt-2" id="nextMonthGrowth">
+                                <i class="fa fa-arrow-up mr-1"></i> 较上月增长 6.7%
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <i class="fa fa-money text-primary text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="w-full bg-neutral-200 h-1.5 rounded-full">
+                            <div class="bg-primary h-1.5 rounded-full" id="predictionConfidenceBar" style="width: 86.5%"></div>
+                        </div>
+                        <p class="text-xs text-neutral-500 mt-1" id="confidenceText">预测可信度 <span class="font-medium text-neutral-700">86.5%</span></p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-card p-6 hover:shadow-card-hover transition-custom transform hover:-translate-y-2">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-sm text-neutral-500 mb-1" id="historyErrorLabel">历史平均误差</p>
+                            <h3 class="text-3xl font-bold text-neutral-700" id="historyErrorRate">0.72%</h3>
+                            <p class="text-success text-sm font-medium mt-2" id="errorComparison">
+                                <i class="fa fa-check-circle mr-1"></i> 优于行业标准 83%
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
+                            <i class="fa fa-tasks text-success text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <p class="text-xs text-neutral-500" id="bestMonthLabel">最佳月份</p>
+                                <p class="text-sm font-medium text-neutral-700" id="bestMonth">2025年3月</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-neutral-500" id="worstMonthLabel">最差月份</p>
+                                <p class="text-sm font-medium text-neutral-700" id="worstMonth">2024年11月</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-card p-6 hover:shadow-card-hover transition-custom transform hover:-translate-y-2">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-sm text-neutral-500 mb-1" id="seasonalLabel">季节性影响</p>
+                            <h3 class="text-3xl font-bold text-neutral-700" id="seasonalPeak">Q3 为高峰季</h3>
+                            <p class="text-warning text-sm font-medium mt-2" id="seasonalTip">
+                                <i class="fa fa-exclamation-triangle mr-1"></i> 注意9月回款高峰
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center">
+                            <i class="fa fa-calendar-check-o text-warning text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex items-center text-sm" id="seasonalGrowth">
+                            <span class="w-3 h-3 rounded-full bg-primary mr-2"></span>
+                            <span class="text-neutral-500 mr-4" id="q1Growth">Q1 平均增长 3.2%</span>
+                            <span class="w-3 h-3 rounded-full bg-secondary mr-2"></span>
+                            <span class="text-neutral-500" id="q3Growth">Q3 平均增长 6.7%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 预测趋势图表 -->
+        <section class="mb-12 animate-fadeIn" style="animation-delay: 0.2s">
+            <div class="bg-white rounded-xl shadow-card overflow-hidden">
+                <div class="p-6 border-b border-neutral-200 flex flex-col md:flex-row md:items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-neutral-700" id="trendTitle">未来6个月收入预测趋势</h3>
+                        <p class="text-neutral-500 text-sm" id="trendDesc">基于XGBoost模型，考虑季度性、节假日和历史增长趋势</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 flex space-x-2">
+                        <button class="px-3 py-1 text-xs bg-primary/10 text-primary rounded-lg" id="sixMonthsBtn">6个月</button>
+                        <button class="px-3 py-1 text-xs bg-neutral-200 text-neutral-500 rounded-lg hover:bg-neutral-300 transition-custom" id="twelveMonthsBtn">12个月</button>
+                        <button class="px-3 py-1 text-xs bg-neutral-200 text-neutral-500 rounded-lg hover:bg-neutral-300 transition-custom" id="customBtn">自定义</button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <canvas id="monthlyTrendChart" height="300"></canvas>
+                </div>
+                <div class="p-6 border-t border-neutral-200 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <h4 class="text-sm font-medium text-neutral-500 mb-2" id="forecastDetailTitle">预测明细</h4>
+                        <div class="space-y-3" id="forecastDetailList">
+                            <!-- 动态数据将通过JS渲染到这里 -->
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-neutral-500 mb-2" id="historyAccuracyTitle">历史预测精度</h4>
+                        <div class="space-y-3" id="historyAccuracyList">
+                            <!-- 动态数据将通过JS渲染到这里 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- 页脚 -->
+    <footer class="bg-neutral-700 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">资金预测系统</h3>
+                    <p class="text-neutral-300 mb-4">基于企业资金收入预测解决方案，助力财务决策智能化。</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-neutral-300 hover:text-white transition-custom">
+                            <i class="fa fa-github text-xl"></i>
+                        </a>
+                        <a href="#" class="text-neutral-300 hover:text-white transition-custom">
+                            <i class="fa fa-linkedin text-xl"></i>
+                        </a>
+                        <a href="#" class="text-neutral-300 hover:text-white transition-custom">
+                            <i class="fa fa-twitter text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">快速链接</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/" class="text-neutral-300 hover:text-white transition-custom">首页</a></li>
+                        <li><a href="/weekly/" class="text-neutral-300 hover:text-white transition-custom">周度预测</a></li>
+                        <li><a href="/monthly/" class="text-neutral-300 hover:text-white transition-custom">月度预测</a></li>
+                        <li><a href="#" class="text-neutral-300 hover:text-white transition-custom">使用文档</a></li>
+                        <li><a href="#" class="text-neutral-300 hover:text-white transition-custom">关于我们</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">联系我们</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center">
+                            <i class="fa fa-envelope-o mr-2"></i>
+                            <span class="text-neutral-300">contact@forecast-system.com</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fa fa-phone mr-2"></i>
+                            <span class="text-neutral-300">+86 13525169428</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fa fa-map-marker mr-2"></i>
+                            <span class="text-neutral-300">北京理工大学珠海学院</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-neutral-600 mt-8 pt-8 text-center text-neutral-400">
+                <p>&copy; 2025 资金预测系统. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- 动态数据脚本（需由Django生成） -->
+    {{ monthly_forecast|json_script:"monthly-data" }}
+    
+    <!-- JavaScript -->
+    <script>
+        // 解析动态数据
+        try {
+            const monthlyData = document.getElementById('monthly-data').textContent;
+            const monthlyForecast = JSON.parse(monthlyData);
+            console.log('月度预测数据加载成功', monthlyForecast);
+        
+            // 渲染页面标题描述
+            document.getElementById('pageDesc').textContent = `基于历史${monthlyForecast.history_months}个月收入数据，使用XGBoost模型预测未来${monthlyForecast.predict_months}个月月度收入，平均预测误差仅${monthlyForecast.avg_error}%，为企业中长期财务规划提供数据支撑。`;
+        
+            // 渲染概览卡片数据
+            document.getElementById('nextMonthLabel').textContent = monthlyForecast.next_month.label;
+            document.getElementById('nextMonthIncome').textContent = `¥${monthlyForecast.next_month.income.toLocaleString()}`;
+        
+            const growthElement = document.getElementById('nextMonthGrowth');
+            if (monthlyForecast.next_month.growth >= 0) {
+                growthElement.innerHTML = `<i class="fa fa-arrow-up mr-1"></i> 较上月增长 ${monthlyForecast.next_month.growth}%`;
+                growthElement.className = 'text-success text-sm font-medium mt-2';
+            } else {
+                growthElement.innerHTML = `<i class="fa fa-arrow-down mr-1"></i> 较上月下降 ${Math.abs(monthlyForecast.next_month.growth)}%`;
+                growthElement.className = 'text-danger text-sm font-medium mt-2';
+            }
+        
+            document.getElementById('predictionConfidenceBar').style.width = `${monthlyForecast.confidence}%`;
+            document.getElementById('confidenceText').innerHTML = `预测可信度 <span class="font-medium text-neutral-700">${monthlyForecast.confidence}%</span>`;
+            document.getElementById('historyErrorRate').textContent = `${monthlyForecast.avg_error}%`;
+            
+            // 月度趋势图表（柱状图）
+            const monthlyTrendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+            new Chart(monthlyTrendCtx, {
+                type: 'bar',
+                data: {
+                    labels: monthlyForecast.trend_labels,
+                    datasets: [{
+                        label: '预测收入',
+                        data: monthlyForecast.predicted_income,
+                        backgroundColor: monthlyForecast.trend_labels.map((_, i) => 
+                            i >= 6 ? 'rgba(255, 125, 0, 0.7)' : 'rgba(22, 93, 255, 0.7)'
+                        ),
+                        borderColor: monthlyForecast.trend_labels.map((_, i) => 
+                            i >= 6 ? '#FF7D00' : '#165DFF'
+                        ),
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }, {
+                        label: '实际收入',
+                        data: monthlyForecast.actual_income.map(income => income || null),
+                        backgroundColor: 'rgba(0, 180, 42, 0.7)',
+                        borderColor: '#00B42A',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY' }).format(context.parsed.y);
+                                    } else {
+                                        label += '未更新';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '¥' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 渲染预测明细
+            const forecastDetailList = document.getElementById('forecastDetailList');
+            monthlyForecast.forecast_details.forEach(month => {
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center';
+                item.innerHTML = `
+                    <span class="text-sm text-neutral-500">${month.month}</span>
+                    <span class="font-medium ${month.is_peak ? 'text-warning' : 'text-neutral-700'}">¥${month.income.toLocaleString()}</span>
+                `;
+                forecastDetailList.appendChild(item);
+            });
+            
+            // 渲染历史预测精度
+            const historyAccuracyList = document.getElementById('historyAccuracyList');
+            monthlyForecast.history_accuracy.forEach(accuracy => {
+                const accuracyItem = document.createElement('div');
+                accuracyItem.className = 'flex items-center';
+                accuracyItem.innerHTML = `
+                    <div class="w-full bg-neutral-200 h-2 rounded-full mr-2">
+                        <div class="bg-success h-2 rounded-full" style="width: ${accuracy.accuracy}%"></div>
+                    </div>
+                    <span class="text-xs text-neutral-500">${accuracy.month} - ${accuracy.accuracy}%</span>
+                `;
+                historyAccuracyList.appendChild(accuracyItem);
+            });
+            
+            // 时间范围切换按钮事件
+            document.getElementById('sixMonthsBtn').addEventListener('click', function() {
+                this.classList.add('bg-primary/10', 'text-primary');
+                this.classList.remove('bg-neutral-200', 'text-neutral-500');
+                document.getElementById('twelveMonthsBtn').classList.add('bg-neutral-200', 'text-neutral-500');
+                document.getElementById('twelveMonthsBtn').classList.remove('bg-primary/10', 'text-primary');
+                document.getElementById('customBtn').classList.add('bg-neutral-200', 'text-neutral-500');
+                document.getElementById('customBtn').classList.remove('bg-primary/10', 'text-primary');
+            });
+            
+            document.getElementById('twelveMonthsBtn').addEventListener('click', function() {
+                this.classList.add('bg-primary/10', 'text-primary');
+                this.classList.remove('bg-neutral-200', 'text-neutral-500');
+                document.getElementById('sixMonthsBtn').classList.add('bg-neutral-200', 'text-neutral-500');
+                document.getElementById('sixMonthsBtn').classList.remove('bg-primary/10', 'text-primary');
+                document.getElementById('customBtn').classList.add('bg-neutral-200', 'text-neutral-500');
+                document.getElementById('customBtn').classList.remove('bg-primary/10', 'text-primary');
+            });
+            
+            document.getElementById('customBtn').addEventListener('click', function() {
+                this.classList.add('bg-primary/10', 'text-primary');
+                this.classList.remove('bg-neutral-200', 'text-neutral-500');
+                document.getElementById('sixMonthsBtn').classList.add('bg-neutral-200', 'text-neutral-500');
+                document.getElementById('sixMonthsBtn').classList.remove('bg-primary/10', 'text-primary');
+                document.getElementById('twelveMonthsBtn').classList.add('bg-neutral-200', 'text-neutral-500');
+                document.getElementById('twelveMonthsBtn').classList.remove('bg-primary/10', 'text-primary');
+            });
+            
+        } catch (error) {
+            console.error('月度预测数据加载失败', error);
+            document.getElementById('forecastDetailList').innerHTML = `
+                <div class="text-center text-danger py-4">
+                    数据加载失败，请刷新页面重试
+                </div>
+            `;
+            document.getElementById('historyAccuracyList').innerHTML = `
+                <div class="text-center text-danger py-4">
+                    数据加载失败，请刷新页面重试
+                </div>
+            `;
+        }
+        
+        // 导航栏滚动效果
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('py-2', 'shadow-md');
+                navbar.classList.remove('py-3');
+            } else {
+                navbar.classList.add('py-3');
+                navbar.classList.remove('py-2', 'shadow-md');
+            }
+        });
+        
+        // 移动端菜单切换
+        document.getElementById('menu-toggle').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>
